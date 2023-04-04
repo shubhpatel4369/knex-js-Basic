@@ -101,7 +101,7 @@ app.post('/users',(req,res)=>{
 
             
             if(!err){
-                res.send(`user added`)
+                res.send(rows)
             }else{
                 console.log(err)
             }
@@ -242,16 +242,6 @@ app.get('/foods',(req,res)=>{
 //     if (err) throw err;
 //     conn.end();
 // });
-
-
-
-
-
-
-
-    
-
-
 
 
 

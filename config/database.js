@@ -10,4 +10,4 @@ const options = {
 const knex = require('knex')(options);
 
 
-module.exports = {knex}
+module.exports = knex

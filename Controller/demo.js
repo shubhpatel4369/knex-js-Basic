@@ -1,90 +1,115 @@
-// const knex = require('knex')
-// var values = [
-//     {
-        
-//             "id": 80,
-//             "name": "[Sample] Orbit Terrarium - Large",
-//             "type": "physical",
-//             "sku": "OTL",
-//             "description": "<p>This strikingly beautiful terrarium will make a welcome addition to your home bringing some green to the scene. A handblown glass sphere rests freely on a thick, concave carved fir base allowing it to be angled in any direction.</p>\n<p><em>Plants, rocks and soil are not included.</em></p>\n<p>Measures 21.59 cm dia x 26.7 cm h / 8.5 in dia x 10.5 in h</p>",
-//             "weight": 1,
-//             "width": 1,
-//             "depth": 1,
-//             "height": 1,
-//             "price": 109,
-//             "cost_price": 0,
-//             "retail_price": 0,
-//             "sale_price": 0,
-//             "map_price": 0,
-//             "tax_class_id": 0,
-//             "product_tax_code": "",
-//             "calculated_price": 109,
-//             "categories": [
-//               19,
-//               23
-//             ],
-//             "brand_id": 0,
-//             "option_set_id": null,
-//             "option_set_display": "right",
-//             "inventory_level": 0,
-//             "inventory_warning_level": 0,
-//             "inventory_tracking": "none",
-//             "reviews_rating_sum": 4,
-//             "reviews_count": 1,
-//             "total_sold": 2,
-//             "fixed_cost_shipping_price": 0,
-//             "is_free_shipping": false,
-//             "is_visible": true,
-//             "is_featured": false,
-//             "related_products": [
-//               -1
-//             ],
-//             "warranty": "",
-//             "bin_picking_number": "",
-//             "layout_file": "product.html",
-//             "upc": "",
-//             "mpn": "",
-//             "gtin": "",
-//             "search_keywords": "",
-//             "availability": "available",
-//             "availability_description": "",
-//             "gift_wrapping_options_type": "any",
-//             "gift_wrapping_options_list": [],
-//             "sort_order": 0,
-//             "condition": "New",
-//             "is_condition_shown": false,
-//             "order_quantity_minimum": 0,
-//             "order_quantity_maximum": 0,
-//             "page_title": "",
-//             "meta_keywords": [],
-//             "meta_description": "",
-//             "date_created": "2015-07-03T18:02:32+00:00",
-//             "date_modified": "2015-12-15T06:23:43+00:00",
-//             "view_count": 73,
-//             "preorder_release_date": null,
-//             "preorder_message": "0",
-//             "is_preorder_only": false,
-//             "is_price_hidden": false,
-//             "price_hidden_label": "0",
-//             "custom_url": {
-//               "url": "/orbit-terrarium-large/",
-//               "is_customized": false
-//             },
-//             "base_variant_id": 64,
-//             "open_graph_type": "product",
-//             "open_graph_title": "",
-//             "open_graph_description": "",
-//             "open_graph_use_meta_description": true,
-//             "open_graph_use_product_name": true,
-//             "open_graph_use_image": true
-//           },
-// ]
-
-// const insert = knex('values').insert(values).then(() => console.log("data inserted"))
-//     .catch((err) => { console.log(err); throw err })
-//     .finally(() => {
-//         knex.destroy();
-//     });
+const express = require('express');
+const db = require('../config/database');
+const bcryptjs=require('bcryptjs');
+const jwt=require('jsonwebtoken');
+const auth = require('../Middleware/auth');
+const router = express.Router();
 
 
-// module.exports = {insert} ;
+router.post('/add', async (req, res) => {
+    try {
+        const {name,email,password}=req.body;
+        if(!name || !email || !password){
+            return res.send({
+                success:false,
+                message:'Please fill the field'
+            })
+        }else{
+            const is_email=await db('users').select('*').where('email', email).first();
+            if(is_email){
+                return res.send({
+                    success:false,
+                    message:'Email already Exists'
+                })
+            }else{
+                const hash_password=await bcryptjs.hash(password,12);
+                const users=await db('users').insert({
+                    name,email,password:hash_password
+                })
+                // let jwtSecretKey = process.env.JWT_SECRET_KEY || fgadjhfbvvbhkjhfek
+                const user_id={user_id:users};
+                // const token=jwt.sign(user_id,jwtSecretKey,"shubhbknljfnlwfln");
+                const token=jwt.sign(user_id,"shubhbknljfnlwfln");
+                if(users){
+                    return res.send({
+                        success:true,
+                        token:token,
+                        message:'Account create successfully'
+                    })
+                }else{
+                    return res.send({
+                        success:false,
+                        message:'Some problem'
+                    })
+                }
+            }
+        }
+    } catch (err) {
+        return res.send({
+            success: false,
+            message: err.message
+        })
+    }
+})
+
+router.post('/login', async (req, res) => {
+    try {
+        const {email,password}=req.body;
+        if(!email || !password){
+            return res.send({
+                success:false,
+                message:'Please fill the field'
+            })
+        }else{
+            const users=await db('users').select('*').where('email', email).first();
+            if(users){
+                const compare_password=await bcryptjs.compare(password,users.password);
+                if(compare_password){
+                    let jwtSecretKey = process.env.JWT_SECRET_KEY || fgadjhfbvvbhkjhfek
+                    const user_id={user_id:users.id};
+                    // const token=jwt.sign(user_id,jwtSecretKey,"shubhbknljfnlwfln");
+                    const token=jwt.sign(user_id,"shubhbknljfnlwfln");
+                    return res.send({
+                        success: true,
+                        token,
+                        message:'Account login successfully'
+                    })
+                }else{
+                    return res.send({
+                        success:false,
+                        message:'Invalid Email and password'
+                    })
+                }
+            }else{
+                return res.send({
+                    success:false,
+                    message:'Invalid Email and password'
+                })
+            }
+        }
+    } catch (errors) {
+        return res.send({
+            success: false,
+            message: errors.message
+        })
+    }
+})
+
+router.get('/me',auth, async (req, res)=>{
+    try {
+
+        // console.log(req)
+        const user_id=req.users;
+        const users=await db('users').select('*').where('id',user_id).first();
+        return res.send({
+            success:true,
+            users
+        })
+    } catch (error) {
+        return res.send({
+            success:false,
+            message:error.message
+        })
+    }
+})
+module.exports = router;

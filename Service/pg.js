@@ -1,4 +1,4 @@
-
+const knex = require("../config/database")
 const findAll = async(tableName,params) =>{
     const data = select("*").from(tableName)
     .where('name','like',`%${params.term}%`)
@@ -7,4 +7,4 @@ const findAll = async(tableName,params) =>{
     return data
 }
 
-module.exports = {findAll}
+module.exports = knex

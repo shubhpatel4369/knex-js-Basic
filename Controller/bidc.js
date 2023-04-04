@@ -52,3 +52,26 @@ knex('users')
 //         .first()
 //     );
 // }
+
+app.get('/join',(req,res)=>{
+
+  var values = {
+    method: 'GET',
+    url: 'https://api.bigcommerce.com/stores/39n5p4x8ny/v3/catalog/products',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Token': 'arto2ufvjyt6h9ke178lkclrze8mq3e'
+    }
+  };
+  
+  axios.request(values).then(function (response) {
+    console.log(response.data);
+    res.send(response.data)
+    knex('bigcommerce')
+      .join('bigcommerce', 'name', '=', 'sku')
+      .select('id', 'width')
+  }).catch(function (error) {
+    console.error(error);
+  });
+  
+  })
